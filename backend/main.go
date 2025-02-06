@@ -28,11 +28,25 @@ func main() {
 	}
 
 	router := mux.NewRouter()
+
+	// Enable CORS
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
+
 	router.HandleFunc("/status", getStatus).Methods("GET")
 	router.HandleFunc("/status", addStatus).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
-
 }
 
 func getStatus(w http.ResponseWriter, r *http.Request) {
