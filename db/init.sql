@@ -1,0 +1,5 @@
+CREATE TABLE containers (
+    id SERIAL PRIMARY KEY,
+    ip VARCHAR(50) NOT NULL,
+    last_ping TIMESTAMP DEFAULT NOW()
+);
