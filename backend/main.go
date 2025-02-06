@@ -2,47 +2,74 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	"encoding/json"
 	"log"
 	"net/http"
-	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
+type ContainerStatus struct {
+	IPAddress   string    `json:"ip_address"`
+	PingTime    int       `json:"ping_time"`
+	LastSuccess time.Time `json:"last_success"`
+}
+
 var db *sql.DB
 
 func main() {
 	var err error
-	connStr := fmt.Sprintf("postgres://%s:%s@db/%s?sslmode=disable",
-		os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_DB"))
+	connStr := "host=monitor_postgres port=5432 user=postgres dbname=docker_monitor sslmode=disable password=yourpassword"
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
-	r := mux.NewRouter()
-	r.HandleFunc("/containers", getContainers).Methods("GET")
+	router := mux.NewRouter()
+	router.HandleFunc("/status", getStatus).Methods("GET")
+	router.HandleFunc("/status", addStatus).Methods("POST")
 
-	http.Handle("/", r)
-	log.Println("Backend started on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", router))
+
 }
 
-func getContainers(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT ip, last_ping FROM containers")
+func getStatus(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query("SELECT ip_address, ping_time, last_success FROM container_status")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
+	var statuses []ContainerStatus
 	for rows.Next() {
-		var ip string
-		var lastPing string
-		rows.Scan(&ip, &lastPing)
-		fmt.Fprintf(w, "IP: %s, Last Ping: %s\n", ip, lastPing)
+		var status ContainerStatus
+		if err := rows.Scan(&status.IPAddress, &status.PingTime, &status.LastSuccess); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		statuses = append(statuses, status)
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(statuses)
+}
+
+func addStatus(w http.ResponseWriter, r *http.Request) {
+	var status ContainerStatus
+	if err := json.NewDecoder(r.Body).Decode(&status); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Exec("INSERT INTO container_status (ip_address, ping_time, last_success) VALUES ($1, $2, $3)",
+		status.IPAddress, status.PingTime, status.LastSuccess)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
