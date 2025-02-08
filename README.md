@@ -147,6 +147,7 @@ docker-monitor/
 ├── backend/               # Backend service (Go)
 │   ├── main.go            # Backend entry point
 │   ├── Dockerfile         # Dockerfile for backend
+|   ├── .env               # Environment variables
 │   └── go.mod             # Go dependencies
 ├── frontend/              # Frontend service (React)
 │   ├── src/               # React source code
@@ -161,7 +162,6 @@ docker-monitor/
 │   └── go.mod             # Go dependencies
 ├── nginx.conf             # Nginx configuration
 ├── docker-compose.yml     # Docker Compose configuration
-├── .env                   # Environment variables
 └── README.md              # Project documentation
 ```
 
