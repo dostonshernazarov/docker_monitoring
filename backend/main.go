@@ -3,8 +3,10 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -21,7 +23,21 @@ var db *sql.DB
 
 func main() {
 	var err error
-	connStr := "host=monitor_postgres port=5432 user=postgres dbname=docker_monitor sslmode=disable password=yourpassword"
+	LoadConfig()
+
+	// Get DB credentials from environment
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbSSLMode := os.Getenv("DB_SSLMODE")
+
+	// Construct connection string
+	connStr := fmt.Sprintf(
+		"host=%s port=%s user=%s dbname=%s sslmode=%s password=%s",
+		dbHost, dbPort, dbUser, dbName, dbSSLMode, dbPassword,
+	)
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
