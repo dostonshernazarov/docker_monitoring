@@ -69,7 +69,7 @@ Before running the project, ensure you have the following installed:
    ```
 
 2. **Set Up Environment Variables**:
-   - Create a `.env` file in the root directory with the following content:
+   - Create a `.env` file in the backend directory with the following content:
      ```env
      POSTGRES_USER=postgres
      POSTGRES_PASSWORD=yourpassword
