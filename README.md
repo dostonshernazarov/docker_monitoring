@@ -1,6 +1,3 @@
-Here’s a comprehensive `README.md` file for your project. It explains the purpose of the project, how to set it up, and how to use it. You can copy and paste this into a `README.md` file in your project's root directory.
-
----
 
 # Docker Container Monitoring System
 
