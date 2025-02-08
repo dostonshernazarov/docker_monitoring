@@ -7,7 +7,7 @@ This project is a **Docker Container Monitoring System** that allows you to moni
 2. **Frontend Service**: A React-based web application that displays the status of Docker containers.
 3. **Pinger Service**: A Go service that pings Docker containers and sends the results to the Backend API.
 4. **PostgreSQL Database**: Stores the status of Docker containers.
-5. **Database migrations**: For avto migrate tables
+5. **Database migrations**: For auto migrate tables
 
 The system is containerized using Docker and orchestrated with Docker Compose. Nginx is used as a reverse proxy to route requests between the frontend and backend.
 
