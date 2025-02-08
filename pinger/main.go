@@ -1,27 +1,24 @@
 package main
 
 import (
-	"database/sql"
+	"bytes"
+	"encoding/json"
 	"log"
+	"net/http"
 	"os/exec"
 	"time"
-
-	_ "github.com/lib/pq"
 )
 
-var db *sql.DB
+type ContainerStatus struct {
+	IPAddress   string    `json:"ip_address"`
+	PingTime    int       `json:"ping_time"`
+	LastSuccess time.Time `json:"last_success"`
+}
 
 func main() {
-	var err error
-	connStr := "host=monitor_postgres port=5432 user=postgres dbname=docker_monitor sslmode=disable password=yourpassword"
-	db, err = sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	for {
 		pingContainers()
-		time.Sleep(10 * time.Second)
+		time.Sleep(10 * time.Second) // Ping every 10 seconds
 	}
 }
 
@@ -37,10 +34,31 @@ func pingContainers() {
 			pingTime = 100 // Example ping time
 		}
 
-		_, err = db.Exec("INSERT INTO container_status (ip_address, ping_time, last_success) VALUES ($1, $2, $3)",
-			ip, pingTime, time.Now())
-		if err != nil {
-			log.Println("Error inserting status:", err)
+		status := ContainerStatus{
+			IPAddress:   ip,
+			PingTime:    pingTime,
+			LastSuccess: time.Now(),
 		}
+
+		sendStatusToBackend(status)
+	}
+}
+
+func sendStatusToBackend(status ContainerStatus) {
+	jsonData, err := json.Marshal(status)
+	if err != nil {
+		log.Println("Error marshaling status:", err)
+		return
+	}
+
+	resp, err := http.Post("http://backend:8080/status", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Println("Error sending status to backend:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		log.Println("Backend returned non-201 status code:", resp.StatusCode)
 	}
 }

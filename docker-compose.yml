@@ -55,8 +55,7 @@ services:
     networks:
       - docker_monitor_network
     depends_on:
-      db:
-        condition: service_healthy
+      - backend
 
   nginx:
     image: nginx
